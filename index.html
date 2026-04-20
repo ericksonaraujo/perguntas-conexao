@@ -89,6 +89,15 @@ body{background:#07070E;font-family:'Plus Jakarta Sans',system-ui,sans-serif;col
 .end-desc{font-size:14px;color:rgba(238,238,244,.4);line-height:1.65;margin-bottom:48px;max-width:260px;}
 .end-btn{padding:15px 36px;border-radius:13px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:rgba(238,238,244,.8);font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background .18s;letter-spacing:-.01em;}
 .end-btn:hover{background:rgba(255,255,255,.09);}
+
+#install-banner{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:440px;padding:16px 20px calc(16px + env(safe-area-inset-bottom));background:rgba(10,10,20,.96);backdrop-filter:blur(16px);border-top:1px solid rgba(255,255,255,.08);display:none;flex-direction:column;gap:10px;z-index:100;}
+#install-banner.show{display:flex;}
+.install-row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.install-text{font-size:13px;color:rgba(255,255,255,.7);line-height:1.5;}
+.install-text strong{display:block;color:#fff;font-size:14px;margin-bottom:2px;}
+.install-btn{flex-shrink:0;padding:10px 20px;border-radius:10px;border:none;background:#007ce5;color:#fff;font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.install-close{background:none;border:none;color:rgba(255,255,255,.3);font-size:20px;cursor:pointer;padding:4px;line-height:1;flex-shrink:0;}
+.install-ios{font-size:12px;color:rgba(255,255,255,.45);text-align:center;line-height:1.6;}
 </style>
 </head>
 <body>
@@ -157,6 +166,14 @@ body{background:#07070E;font-family:'Plus Jakarta Sans',system-ui,sans-serif;col
    <button class="end-btn" onclick="goHome()">← Recomeçar</button>
   </div>
 
+ </div>
+</div>
+
+<div id="install-banner">
+ <div class="install-row">
+  <div class="install-text"><strong>Instalar Conexão</strong>Use como app, sem precisar do navegador</div>
+  <button class="install-btn" id="installBtn">Instalar</button>
+  <button class="install-close" id="installClose">×</button>
  </div>
 </div>
 
@@ -346,6 +363,49 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('./sw.js').catch(()=>{});
   });
 }
+
+(function(){
+  const banner = document.getElementById('install-banner');
+  const installBtn = document.getElementById('installBtn');
+  const closeBtn = document.getElementById('installClose');
+  let deferredPrompt = null;
+
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isInStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+
+  if(isInStandalone) return; // já instalado, não mostra nada
+
+  if(isIOS){
+    // iOS não dispara beforeinstallprompt — mostra instrução manual
+    setTimeout(()=>{
+      installBtn.textContent = 'Como instalar';
+      installBtn.onclick = ()=>{
+        installBtn.style.display='none';
+        const tip = document.createElement('div');
+        tip.className = 'install-ios';
+        tip.innerHTML = 'No Safari, toque em <strong>compartilhar</strong> (□↑)<br>e depois em <strong>"Adicionar à Tela de Início"</strong>';
+        banner.querySelector('.install-row').after(tip);
+      };
+      banner.classList.add('show');
+    }, 2000);
+  } else {
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();
+      deferredPrompt = e;
+      setTimeout(()=> banner.classList.add('show'), 1500);
+    });
+
+    installBtn.addEventListener('click', async ()=>{
+      if(!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const {outcome} = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      banner.classList.remove('show');
+    });
+  }
+
+  closeBtn.addEventListener('click', ()=> banner.classList.remove('show'));
+})();
 </script>
 </body>
 </html>
