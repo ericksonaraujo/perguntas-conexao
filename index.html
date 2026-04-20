@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Conexão</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Conexão">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{background:#07070E;font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#EEEEF4;}
+#outer{min-height:720px;display:flex;justify-content:center;}
+#app{width:100%;max-width:440px;min-height:720px;position:relative;overflow:hidden;}
+#glow{position:absolute;inset:0;pointer-events:none;transition:background 1.2s ease;z-index:0;}
+.screen{position:absolute;inset:0;min-height:720px;display:flex;flex-direction:column;opacity:0;pointer-events:none;transform:translateY(18px);transition:opacity .38s ease,transform .38s ease;z-index:1;}
+.screen.active{opacity:1;pointer-events:all;transform:translateY(0);}
+
+#home{padding:40px 28px 0;justify-content:space-between;background:linear-gradient(135deg,#001a3a 0%,#000000 100%);}
+.eyebrow{font-size:10px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:rgba(238,238,244,.35);margin-bottom:16px;text-align:center;}
+.htitle{font-size:56px;font-weight:600;line-height:.95;letter-spacing:-.04em;}
+.htitle-light{display:block;font-size:30px;font-weight:300;color:rgba(238,238,244,.38);letter-spacing:-.025em;margin-top:4px;}
+.hsub{font-size:13px;color:rgba(238,238,244,.36);margin-top:16px;line-height:1.7;max-width:260px;text-align:center;}
+.cards{display:flex;flex-direction:column;gap:10px;}
+.card{border-radius:18px;padding:20px 22px;cursor:pointer;border:1px solid transparent;display:flex;align-items:center;justify-content:space-between;gap:16px;transition:transform .16s ease;}
+.card:hover{transform:translateY(-2px);}
+.card:active{transform:scale(.975);}
+.card.blue{background:linear-gradient(135deg,#003c70 0%,#000018 100%);border-color:rgba(0,124,229,.35);}
+.card.green{background:linear-gradient(135deg,#065232 0%,#000e0e 100%);border-color:rgba(12,163,101,.3);}
+.card.orange{background:linear-gradient(135deg,#721d0e 0%,#1d0000 100%);border-color:rgba(230,90,45,.3);}
+.card-tag{font-size:9px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;opacity:.32;margin-bottom:3px;}
+.card-name{font-size:24px;font-weight:700;letter-spacing:-.03em;margin-bottom:3px;}
+.card-desc{font-size:11.5px;opacity:.36;line-height:1.5;max-width:230px;}
+.card-arrow{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;transition:background .2s;}
+.card:hover .card-arrow{background:rgba(255,255,255,.12);}
+
+#question{display:flex;flex-direction:column;}
+.q-topbar{padding:18px 18px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.icon-btn{width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(238,238,244,.36);transition:background .16s,color .16s;flex-shrink:0;}
+.icon-btn:hover{background:rgba(255,255,255,.08);color:rgba(238,238,244,.7);}
+.progress-track{flex:1;display:flex;gap:3px;align-items:center;}
+.seg{flex:1;height:2px;border-radius:2px;background:rgba(255,255,255,.18);transition:background .4s ease;}
+.seg.b{background:rgba(255,255,255,.85);}.seg.g{background:rgba(255,255,255,.85);}.seg.o{background:rgba(255,255,255,.85);}
+
+.q-body{flex:1;padding:20px 28px 12px;display:flex;flex-direction:column;justify-content:center;min-height:0;}
+.q-cat{display:flex;align-items:center;gap:7px;margin-bottom:24px;}
+.cat-dot{display:none;}
+.cat-label{font-size:10px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.6);}
+.q-text{font-size:clamp(33px,8.25vw,42px);font-weight:400;line-height:1.28;letter-spacing:-.02em;text-wrap:balance;opacity:0;transform:translateY(8px);transition:opacity .28s ease,transform .28s ease;}
+.q-text.vis{opacity:1;transform:translateY(0);}
+.q-num{display:none;}
+
+.q-footer{padding:16px 18px 40px;display:flex;gap:8px;flex-shrink:0;}
+.nav-btn{flex:1;padding:15px 10px;border-radius:13px;border:1px solid rgba(0,0,0,.15);background:rgba(0,0,0,.28);color:rgba(255,255,255,.6);font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .16s ease;letter-spacing:-.01em;}
+.nav-btn:hover{background:rgba(0,0,0,.38);color:rgba(255,255,255,.85);}
+.nav-btn.off{opacity:.2;pointer-events:none;}
+.nav-btn.main{border:none;color:rgba(255,255,255,.95);font-weight:600;}
+.nav-btn.main.blue{background:#0060d0;}
+.nav-btn.main.green{background:#0a8a52;}
+.nav-btn.main.orange{background:#c84020;}
+.nav-btn.main:hover{opacity:.86;}
+#question .icon-btn{background:rgba(0,0,0,.2);border-color:rgba(0,0,0,.12);color:rgba(255,255,255,.75);}
+#question .icon-btn:hover{background:rgba(0,0,0,.32);color:rgba(255,255,255,.95);}
+
+#tr-screen{align-items:center;justify-content:center;text-align:center;padding:56px 36px;}
+.tr-icon{display:none;}
+.tr-eyebrow{font-size:10px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:rgba(238,238,244,.32);margin-bottom:10px;}
+.tr-title{font-size:44px;font-weight:600;letter-spacing:-.04em;margin-bottom:12px;}
+.tr-desc{font-size:14px;color:rgba(238,238,244,.4);line-height:1.65;margin-bottom:48px;max-width:260px;}
+.tr-btn{padding:16px 44px;border-radius:14px;border:none;color:rgba(238,238,244,.92);font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:15px;font-weight:600;cursor:pointer;letter-spacing:-.01em;transition:transform .16s,opacity .16s;}
+.tr-btn:hover{opacity:.86;}.tr-btn:active{transform:scale(.97);}
+.tr-btn.blue{background:linear-gradient(135deg,#1A2E60,#2B4FAA);}
+.tr-btn.green{background:linear-gradient(135deg,#122E22,#1D6443);}
+.tr-btn.orange{background:linear-gradient(135deg,#4A1C08,#8A3510);}
+
+#end-screen{align-items:center;justify-content:center;text-align:center;padding:56px 36px;background:linear-gradient(135deg,#001a3a 0%,#000000 100%);}
+.end-icon{font-size:40px;margin-bottom:26px;}
+.end-title{font-size:38px;font-weight:800;letter-spacing:-.04em;margin-bottom:12px;}
+.end-desc{font-size:14px;color:rgba(238,238,244,.4);line-height:1.65;margin-bottom:48px;max-width:260px;}
+.end-btn{padding:15px 36px;border-radius:13px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:rgba(238,238,244,.8);font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background .18s;letter-spacing:-.01em;}
+.end-btn:hover{background:rgba(255,255,255,.09);}
+</style>
+</head>
+<body>
+
+<div id="outer">
+ <div id="app">
+  <div id="glow"></div>
+
+  <div class="screen active" id="home">
+   <div style="flex:1;padding:24px 28px 0;display:flex;flex-direction:column;align-items:center;">
+    <div class="eyebrow">Jogo de perguntas</div>
+    <h1 class="htitle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300" style="width:100%;max-width:256px;display:block;" aria-label="Conexão"><defs><style>.cls-1{fill:#fff;}</style></defs><path class="cls-1" d="M92.16,129.03c6-3.74,12.74-5.61,20.23-5.61s14.12,1.91,19.91,5.72c5.79,3.81,10.09,8.76,12.92,14.83l14.4-7.41c-2.4-5.65-6-10.62-10.8-14.93-4.8-4.31-10.31-7.73-16.52-10.27-6.22-2.54-12.85-3.81-19.91-3.81-11.16,0-20.97,2.58-29.44,7.73-8.47,5.16-15.11,12.18-19.91,21.07-4.8,8.9-7.2,18.99-7.2,30.29s2.4,21.43,7.2,30.39c4.8,8.97,11.43,16.06,19.91,21.29,8.47,5.22,18.28,7.84,29.44,7.84,7.06,0,13.69-1.27,19.91-3.81,6.21-2.54,11.72-6,16.52-10.38,4.8-4.38,8.4-9.32,10.8-14.83l-14.4-7.84c-2.97,6.35-7.31,11.44-13.03,15.25-5.72,3.81-12.32,5.72-19.8,5.72s-14.23-1.91-20.23-5.72c-6-3.81-10.73-9-14.19-15.57-3.46-6.57-5.19-13.94-5.19-22.13s1.73-15.78,5.19-22.34c3.46-6.57,8.19-11.72,14.19-15.46Z"/><path class="cls-1" d="M270.28,115.16c-8.68-5.08-18.53-7.62-29.55-7.62s-20.86,2.58-29.55,7.73c-8.68,5.16-15.57,12.18-20.65,21.07s-7.63,18.99-7.63,30.29,2.58,21.64,7.73,30.6c5.15,8.97,12.1,16.03,20.86,21.18,8.75,5.16,18.5,7.73,29.23,7.73s20.23-2.54,28.91-7.62c8.68-5.08,15.64-12.1,20.86-21.07,5.22-8.97,7.84-19.24,7.84-30.82s-2.51-21.6-7.52-30.5-11.86-15.88-20.54-20.97ZM276,188.86c-3.6,6.64-8.47,11.86-14.61,15.67-6.14,3.81-13.03,5.72-20.65,5.72s-14.51-1.91-20.65-5.72c-6.14-3.81-11.05-9.03-14.72-15.67-3.67-6.64-5.51-14.05-5.51-22.24s1.83-15.53,5.51-22.03c3.67-6.49,8.58-11.65,14.72-15.46,6.14-3.81,13.03-5.72,20.65-5.72s14.51,1.91,20.65,5.72c6.14,3.81,11.01,8.97,14.61,15.46,3.6,6.5,5.4,13.84,5.4,22.03s-1.8,15.6-5.4,22.24Z"/><path class="cls-1" d="M396.52,113.04c-6.43-3.67-13.66-5.51-21.71-5.51-8.47,0-15.92,2.12-22.35,6.35-4.23,2.79-7.6,6.32-10.27,10.46v-14.27h-15.88v113.52h15.88v-67.56c0-6.78,1.27-12.6,3.81-17.47,2.54-4.87,6.07-8.61,10.59-11.22,4.52-2.61,9.67-3.92,15.46-3.92s10.91,1.31,15.36,3.92c4.45,2.62,7.91,6.32,10.38,11.12,2.47,4.8,3.71,10.66,3.71,17.58v67.56h15.88v-73.71c0-8.05-1.87-15.28-5.61-21.71-3.74-6.42-8.83-11.47-15.25-15.14Z"/><path class="cls-1" d="M535.98,124.37c-4.52-5.15-9.99-9.25-16.41-12.28-6.43-3.03-13.73-4.55-21.92-4.55-10.31,0-19.59,2.54-27.85,7.62-8.26,5.08-14.8,12.04-19.59,20.86-4.8,8.83-7.2,18.96-7.2,30.39s2.47,21.68,7.41,30.71c4.94,9.04,11.68,16.13,20.23,21.29,8.54,5.16,18.11,7.73,28.7,7.73,7.77,0,14.86-1.31,21.29-3.92,6.42-2.61,11.97-6.07,16.62-10.38,4.66-4.31,8.12-9,10.38-14.08l-13.56-7.2c-3.53,5.93-8.12,10.87-13.77,14.83-5.65,3.95-12.64,5.93-20.97,5.93-7.2,0-13.94-1.83-20.23-5.51-6.28-3.67-11.22-8.86-14.82-15.57-2.91-5.41-4.39-11.6-4.49-18.53h89.31c.28-1.83.5-3.63.64-5.4.14-1.76.21-3.35.21-4.77,0-6.78-1.2-13.38-3.6-19.8-2.4-6.42-5.86-12.21-10.38-17.37ZM478.06,127.87c6-3.67,12.53-5.51,19.59-5.51s13.41,1.8,19.06,5.4c5.65,3.6,9.99,8.47,13.03,14.61,2.18,4.41,3.23,9.26,3.19,14.51h-72.9c.53-5.03,1.84-9.58,3.94-13.66,3.39-6.57,8.08-11.68,14.08-15.35Z"/><polygon class="cls-1" points="581.52 110.07 562.03 110.07 601.64 166.84 561.82 223.6 581.52 223.6 620.7 166.84 581.52 110.07"/><polygon class="cls-1" points="670.99 223.6 690.48 223.6 650.87 166.84 690.69 110.07 670.99 110.07 631.81 166.84 670.99 223.6"/><path class="cls-1" d="M780.34,112.4c-6.43-3.25-13.8-4.87-22.13-4.87-6.35,0-12.5,1.17-18.43,3.5-5.93,2.33-11.19,5.47-15.78,9.42-4.59,3.95-7.94,8.33-10.06,13.13l14.4,7.84c2.54-5.51,6.42-9.99,11.65-13.45,5.22-3.46,11.29-5.19,18.21-5.19,7.91,0,14.33,2.12,19.27,6.35,4.94,4.24,7.41,9.74,7.41,16.52v5.86l-41.09,6.85c-8.33,1.41-15.18,3.81-20.54,7.2-5.37,3.39-9.32,7.52-11.86,12.39-2.54,4.87-3.81,10.27-3.81,16.2s1.62,11.72,4.87,16.52c3.25,4.8,7.69,8.58,13.34,11.33,5.64,2.75,12.07,4.13,19.27,4.13,6.64,0,12.74-1.03,18.32-3.07,5.57-2.05,10.45-4.8,14.61-8.26,2.8-2.33,5.07-4.85,6.88-7.54v16.33h15.88v-77.94c0-7.48-1.8-14.08-5.4-19.8-3.6-5.72-8.61-10.2-15.04-13.45ZM780.02,193.31c-3.25,5.65-7.77,10.13-13.55,13.45-5.79,3.32-12.57,4.98-20.33,4.98-6.35,0-11.54-1.76-15.57-5.29-4.02-3.53-6.03-7.84-6.03-12.92s1.8-9.74,5.4-13.55c3.6-3.81,9.49-6.42,17.69-7.84l37.28-6.21v8.54c0,6.92-1.63,13.2-4.87,18.85Z"/><path class="cls-1" d="M936.64,136.13c-5.01-8.9-11.86-15.88-20.54-20.97-8.68-5.08-18.53-7.62-29.55-7.62s-20.86,2.58-29.55,7.73c-8.68,5.16-15.57,12.18-20.65,21.07s-7.63,18.99-7.63,30.29,2.58,21.64,7.73,30.6c5.15,8.97,12.1,16.03,20.86,21.18,8.75,5.16,18.5,7.73,29.23,7.73s20.23-2.54,28.91-7.62c8.68-5.08,15.64-12.1,20.86-21.07,5.22-8.97,7.84-19.24,7.84-30.82s-2.51-21.6-7.52-30.5ZM921.82,188.86c-3.6,6.64-8.47,11.86-14.61,15.67-6.14,3.81-13.03,5.72-20.65,5.72s-14.51-1.91-20.65-5.72c-6.14-3.81-11.05-9.03-14.72-15.67-3.67-6.64-5.51-14.05-5.51-22.24s1.83-15.53,5.51-22.03c3.67-6.49,8.58-11.65,14.72-15.46,6.14-3.81,13.03-5.72,20.65-5.72s14.51,1.91,20.65,5.72c6.14,3.81,11.01,8.97,14.61,15.46,3.6,6.5,5.4,13.84,5.4,22.03s-1.8,15.6-5.4,22.24Z"/><path class="cls-1" d="M719.33,88.69v-14.83h72.6v14.83h-72.6Z"/></svg></h1>
+    <p class="hsub">Escolha um nível e deixe as perguntas guiarem a conversa.</p>
+   </div>
+   <div style="padding:16px 28px max(44px, calc(28px + env(safe-area-inset-bottom)))">
+    <div class="cards">
+     <div class="card blue" onclick="startLevel('inicial')">
+      <div><div class="card-tag">Nível 01</div><div class="card-name">Inicial</div><div class="card-desc">Quebra-gelo leve para começar com naturalidade</div></div>
+      <div class="card-arrow">→</div>
+     </div>
+     <div class="card green" onclick="startLevel('conexao')">
+      <div><div class="card-tag">Nível 02</div><div class="card-name">Conexão</div><div class="card-desc">Perguntas que revelam perspectivas e aproximam</div></div>
+      <div class="card-arrow">→</div>
+     </div>
+     <div class="card orange" onclick="startLevel('profundo')">
+      <div><div class="card-tag">Nível 03</div><div class="card-name">Profundo</div><div class="card-desc">Vulnerabilidade, afeto e verdades que conectam de verdade</div></div>
+      <div class="card-arrow">→</div>
+     </div>
+    </div>
+   </div>
+  </div>
+
+  <div class="screen" id="question">
+   <div class="q-topbar">
+    <div class="icon-btn" id="homeBtn">
+     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1.5 6L7 1.5L12.5 6V12.5H9V8.5H5V12.5H1.5V6Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="progress-track" id="progressBar"></div>
+    <div class="icon-btn" id="shuffleBtn">
+     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9.5 2.5L12 5L9.5 7.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 5H12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M4.5 11.5L2 9L4.5 6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 9H2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    </div>
+   </div>
+   <div class="q-body">
+    <div class="q-cat"><div class="cat-dot" id="catDot"></div><span class="cat-label" id="catLabel">Categoria</span></div>
+    <div class="q-text" id="qText">Pergunta aqui</div>
+    <div class="q-num" id="qNum">1 · 10</div>
+   </div>
+   <div class="q-footer">
+    <button class="nav-btn off" id="prevBtn" onclick="navigate(-1)">← Anterior</button>
+    <button class="nav-btn main blue" id="nextBtn" onclick="navigate(1)">Próxima →</button>
+   </div>
+  </div>
+
+  <div class="screen" id="tr-screen">
+   <div class="tr-icon" id="trIcon">🌿</div>
+   <div class="tr-eyebrow">Próximo nível</div>
+   <div class="tr-title" id="trTitle">Conexão</div>
+   <div class="tr-desc" id="trDesc">Hora de ir um pouco mais fundo.</div>
+   <button class="tr-btn green" id="trBtn" onclick="continueLevel()">Continuar →</button>
+  </div>
+
+  <div class="screen" id="end-screen">
+   <div class="end-icon">✦</div>
+   <div class="end-title">Fim da jornada</div>
+   <div class="end-desc">Você chegou ao final das perguntas profundas. Esperamos que as conexões tenham sido reais.</div>
+   <button class="end-btn" onclick="goHome()">← Recomeçar</button>
+  </div>
+
+ </div>
+</div>
+
+<script>
+const QS={
+ inicial:[
+  {c:"🎬 Cultura Pop",q:"Qual filme você já viu mais de 3 vezes?"},
+  {c:"🎬 Cultura Pop",q:"Que música sempre melhora seu humor?"},
+  {c:"🎬 Cultura Pop",q:"Com qual personagem de filme você mais se identifica?"},
+  {c:"🎬 Cultura Pop",q:"Que música te lembra um momento marcante?"},
+  {c:"🎬 Cultura Pop",q:"Um filme que te fez chorar?"},
+  {c:"🎬 Cultura Pop",q:"Que filme você acha ignorado e o que as pessoas não percebem nele?"},
+  {c:"🎬 Cultura Pop",q:"Qual trilha sonora de filme mais te marcou e em qual momento?"},
+  {c:"🎬 Cultura Pop",q:"Que tipo de filme você sempre escolhe quando quer assistir a algo?"},
+  {c:"🎬 Cultura Pop",q:"Qual seu filme de comédia favorito?"},
+  {c:"🎬 Cultura Pop",q:"Que série você indicaria hoje e o que ela revela sobre você agora?"},
+  {c:"🎬 Cultura Pop",q:"Qual música você colocaria para resumir sua semana?"},
+  {c:"🎬 Cultura Pop",q:"Qual livro mudou seu jeito de ver o mundo?"},
+  {c:"🧳 Viagens e Lugares",q:"Qual foi a viagem mais marcante da sua vida?"},
+  {c:"🧳 Viagens e Lugares",q:"Que lugar você ainda quer conhecer e o que te atrai nele?"},
+  {c:"🧳 Viagens e Lugares",q:"Uma cidade que te surpreendeu?"},
+  {c:"🧳 Viagens e Lugares",q:"Se você só pudesse viajar para praia, campo ou cidade, qual escolheria?"},
+  {c:"🧳 Viagens e Lugares",q:"Um lugar para onde você voltaria mil vezes?"},
+  {c:"🧳 Viagens e Lugares",q:"Qual foi sua viagem mais caótica?"},
+  {c:"🧳 Viagens e Lugares",q:"Um lugar onde você se sentiu em casa?"},
+  {c:"🧳 Viagens e Lugares",q:"Onde você teve a melhor comida da sua vida?"},
+  {c:"🧳 Viagens e Lugares",q:"Qual país mais te atrai culturalmente?"},
+  {c:"🧳 Viagens e Lugares",q:"O que você sempre leva na mala e o que isso diz sobre você?"},
+  {c:"🧳 Viagens e Lugares",q:"Quando viaja, você planeja tudo ou decide no caminho?"},
+  {c:"🧳 Viagens e Lugares",q:"Qual idioma você gostaria de falar fluentemente?"},
+  {c:"🧳 Viagens e Lugares",q:"Qual é a sua viagem dos sonhos?"},
+  {c:"🧳 Viagens e Lugares",q:"Um costume local que você adorou?"},
+  {c:"🧳 Viagens e Lugares",q:"Você prefere voltar a um lugar que amou ou conhecer algo novo?"},
+  {c:"😂 Histórias Engraçadas",q:"Qual foi seu mico mais memorável?"},
+  {c:"😂 Histórias Engraçadas",q:"Um apelido que você já teve e achava estranho?"},
+  {c:"😂 Histórias Engraçadas",q:"Uma situação engraçada que virou história?"},
+  {c:"😂 Histórias Engraçadas",q:"Já falou algo sem querer e se arrependeu?"},
+  {c:"😂 Histórias Engraçadas",q:"Qual foi a coisa mais aleatória que você já fez?"},
+  {c:"😂 Histórias Engraçadas",q:"Já teve uma crise de riso em um momento sério?"},
+  {c:"😂 Histórias Engraçadas",q:"Qual foi um momento em que você passou vergonha em público e hoje acha graça?"},
+  {c:"😂 Histórias Engraçadas",q:"Qual história você sempre repete para os amigos?"},
+  {c:"😂 Histórias Engraçadas",q:"Qual sua história favorita de infância?"},
+  {c:"🧩 Curiosidades Aleatórias",q:"Um hábito estranho que você tem?"},
+  {c:"🧩 Curiosidades Aleatórias",q:"Qual foi o objeto mais estranho que você já comprou?"},
+  {c:"🧩 Curiosidades Aleatórias",q:"Já teve um sonho muito louco que lembra até hoje?"},
+  {c:"🧩 Curiosidades Aleatórias",q:"Que sabor de sorvete mais combina com você?"},
+  {c:"🧩 Curiosidades Aleatórias",q:"Um cheiro que te traz lembranças?"},
+  {c:"🧩 Curiosidades Aleatórias",q:"Qual desenho marcou sua infância?"},
+  {c:"🧩 Curiosidades Aleatórias",q:"Qual tecnologia você gostaria que existisse?"},
+  {c:"🧩 Curiosidades Aleatórias",q:"Uma habilidade inútil que você adoraria ter?"},
+  {c:"🧩 Curiosidades Aleatórias",q:"Qual foi a coisa mais estranha que você já comeu?"}
+ ],
+ conexao:[
+  {c:"🧠 Autoconhecimento",q:"Você é mais razão ou emoção?"},
+  {c:"🧠 Autoconhecimento",q:"Que parte de você nem todos conhecem?"},
+  {c:"🧠 Autoconhecimento",q:"Qual qualidade você gostaria de ter mais?"},
+  {c:"🧠 Autoconhecimento",q:"Como você lida com críticas?"},
+  {c:"🧠 Autoconhecimento",q:"Você prefere rotina ou novidade?"},
+  {c:"🧠 Autoconhecimento",q:"O que você aprendeu com seus erros?"},
+  {c:"🧠 Autoconhecimento",q:"Qual hábito te ajuda a manter a sanidade?"},
+  {c:"🧠 Autoconhecimento",q:"Como você lida com o tédio?"},
+  {c:"🧠 Autoconhecimento",q:"Qual conselho você daria ao seu eu de 10 anos atrás?"},
+  {c:"🧠 Autoconhecimento",q:"Você se considera introspectivo ou extrovertido?"},
+  {c:"🧠 Autoconhecimento",q:"Como você reage sob pressão?"},
+  {c:"🧠 Autoconhecimento",q:"Que parte do seu jeito as pessoas mais notam?"},
+  {c:"💭 Imaginação e Sonhos",q:"Você voltaria no tempo ou iria para o futuro?"},
+  {c:"💭 Imaginação e Sonhos",q:"Que sonho de infância você ainda tem?"},
+  {c:"💭 Imaginação e Sonhos",q:"Qual seria seu emprego dos sonhos?"},
+  {c:"💭 Imaginação e Sonhos",q:"Um mundo fictício que você gostaria de viver por um dia?"},
+  {c:"💭 Imaginação e Sonhos",q:"Qual personagem você gostaria de ser?"},
+  {c:"💭 Imaginação e Sonhos",q:"Qual superpoder você gostaria de ter?"},
+  {c:"💭 Imaginação e Sonhos",q:"Se pudesse repetir um único dia da sua vida, qual seria?"},
+  {c:"💭 Imaginação e Sonhos",q:"Como seria a casa dos seus sonhos?"},
+  {c:"💭 Imaginação e Sonhos",q:"Se pudesse inventar uma tradição entre amigos, qual seria?"},
+  {c:"💭 Imaginação e Sonhos",q:"Se pudesse escolher qualquer pessoa no mundo, quem convidaria para jantar?"},
+  {c:"💭 Imaginação e Sonhos",q:"Gostaria de ser famoso? De que forma?"},
+  {c:"💛 Afetos e Conexões",q:"O que te faz sentir cuidado?"},
+  {c:"💛 Afetos e Conexões",q:"Qual gesto de carinho você valoriza mais?"},
+  {c:"💛 Afetos e Conexões",q:"O que você admira nos seus amigos?"},
+  {c:"💛 Afetos e Conexões",q:"Como você demonstra afeto?"},
+  {c:"💛 Afetos e Conexões",q:"Você acredita em amizades para a vida toda?"},
+  {c:"💛 Afetos e Conexões",q:"O que torna alguém inesquecível?"},
+  {c:"💛 Afetos e Conexões",q:"O que um amigo já fez por você que você nunca esqueceu?"},
+  {c:"💛 Afetos e Conexões",q:"Um gesto simples que te emociona?"},
+  {c:"💛 Afetos e Conexões",q:"Qual é o seu maior valor em uma amizade?"},
+  {c:"💛 Afetos e Conexões",q:"Um presente marcante que já recebeu?"},
+  {c:"💛 Afetos e Conexões",q:"Uma saudade boa que você sente?"},
+  {c:"💛 Afetos e Conexões",q:"Qual qualidade mais te encanta em alguém?"}
+ ],
+ profundo:[
+  {c:"🧠 Autoconhecimento",q:"Qual é a sua lembrança mais preciosa?"},
+  {c:"🧠 Autoconhecimento",q:"Qual foi o elogio mais especial que você já recebeu?"},
+  {c:"🧠 Autoconhecimento",q:"Há algo que você sonha em fazer há muito tempo? Por que ainda não o fez?"},
+  {c:"🧠 Autoconhecimento",q:"Qual é a maior conquista da sua vida?"},
+  {c:"🧠 Autoconhecimento",q:"Se pudesse acordar amanhã com uma nova qualidade ou habilidade, qual seria?"},
+  {c:"🧠 Autoconhecimento",q:"Se pudesse mudar algo na forma como foi educado, o que seria?"},
+  {c:"🧠 Autoconhecimento",q:"Você acha sua infância mais feliz que a da maioria?"},
+  {c:"🧠 Autoconhecimento",q:"Pelo que você se sente mais agradecido na sua vida?"},
+  {c:"💔 Vulnerabilidades",q:"Qual é o seu maior medo irracional?"},
+  {c:"💔 Vulnerabilidades",q:"Qual foi a situação mais difícil que você já enfrentou?"},
+  {c:"💔 Vulnerabilidades",q:"Qual crítica te feriu mais profundamente?"},
+  {c:"💔 Vulnerabilidades",q:"Qual é a sua maior insegurança social?"},
+  {c:"💔 Vulnerabilidades",q:"Quando foi a última vez que você se sentiu vulnerável?"},
+  {c:"💔 Vulnerabilidades",q:"Quando foi a última vez que você chorou na frente de alguém?"},
+  {c:"💔 Vulnerabilidades",q:"Se soubesse que vai morrer em um ano, mudaria algo no seu modo de vida?"},
+  {c:"💛 Afetos e Conexões",q:"O que significa amizade para você?"},
+  {c:"💛 Afetos e Conexões",q:"Qual foi a maior decepção em uma amizade?"},
+  {c:"💛 Afetos e Conexões",q:"Se sua casa pegasse fogo, após salvar as pessoas e os animais, você tentaria salvar algo?"}
+ ]
+};
+
+const CFG={
+ inicial:{color:'blue',cls:'b',glow:'radial-gradient(ellipse at 50% 25%,rgba(43,79,170,.24) 0%,transparent 62%)',next:'conexao',nextName:'Conexão',nextDesc:'Hora de ir um pouco mais fundo na conversa.',nextIcon:'🌿'},
+ conexao:{color:'green',cls:'g',glow:'radial-gradient(ellipse at 50% 25%,rgba(29,100,67,.22) 0%,transparent 62%)',next:'profundo',nextName:'Profundo',nextDesc:'Prepare-se para as perguntas que realmente conectam.',nextIcon:'🔥'},
+ profundo:{color:'orange',cls:'o',glow:'radial-gradient(ellipse at 50% 25%,rgba(138,53,16,.2) 0%,transparent 62%)',next:null}
+};
+const DOTS={blue:'#3B6FD4',green:'#2A8A5C',orange:'#C04E1A'};
+
+const QBGS={
+ inicial:'linear-gradient(135deg, #007ce5 0%, #000029 100%)',
+ conexao:'linear-gradient(135deg, #0ca365 0%, #001c1c 100%)',
+ profundo:'linear-gradient(135deg, #e65a2d 0%, #3b0000 100%)'
+};
+
+let lvl=null,nextLvl=null,qs=[],idx=0;
+const MAX=10;
+
+function shuffle(a){const r=[...a];for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];}return r;}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function setGlow(l){document.getElementById('glow').style.background=l?CFG[l].glow:'none';}
+
+function startLevel(l){
+ lvl=l;qs=shuffle(QS[l]).slice(0,MAX);idx=0;render();show('question');setGlow(l);
+ document.getElementById('question').style.background=QBGS[l];
+}
+
+function render(){
+ const q=qs[idx],c=CFG[lvl];
+ const bar=document.getElementById('progressBar');
+ bar.innerHTML='';
+ for(let i=0;i<MAX;i++){const s=document.createElement('div');s.className='seg'+(i<=idx?' '+c.cls:'');bar.appendChild(s);}
+ document.getElementById('catDot').style.background=DOTS[c.color];
+ document.getElementById('catLabel').textContent=q.c;
+ const el=document.getElementById('qText');
+ el.classList.remove('vis');void el.offsetWidth;el.textContent=q.q;
+ requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('vis')));
+ document.getElementById('qNum').textContent=`${idx+1} · ${MAX}`;
+ document.getElementById('prevBtn').className='nav-btn'+(idx===0?' off':'');
+ const nb=document.getElementById('nextBtn');
+ nb.className=`nav-btn main ${c.color}`;
+ nb.textContent=idx===MAX-1?(c.next?'Próximo nível →':'Finalizar ✦'):'Próxima →';
+}
+
+function navigate(d){
+ if(d===-1&&idx>0){idx--;render();return;}
+ if(d===1){
+  if(idx<MAX-1){idx++;render();}
+  else{const c=CFG[lvl];if(c.next)showTr(c);else{show('end-screen');setGlow(null);}}
+ }
+}
+
+const TRBGS={
+ conexao:'linear-gradient(135deg, #002a18 0%, #000000 100%)',
+ profundo:'linear-gradient(135deg, #2a0e00 0%, #000000 100%)'
+};
+
+function showTr(c){
+ nextLvl=c.next;
+ document.getElementById('trIcon').textContent=c.nextIcon;
+ document.getElementById('trTitle').textContent=c.nextName;
+ document.getElementById('trDesc').textContent=c.nextDesc;
+ document.getElementById('trBtn').className=`tr-btn ${CFG[nextLvl].color}`;
+ document.getElementById('tr-screen').style.background=TRBGS[nextLvl]||'none';
+ show('tr-screen');setGlow(nextLvl);
+}
+
+function continueLevel(){startLevel(nextLvl);}
+function goHome(){lvl=null;show('home');setGlow(null);}
+
+document.getElementById('homeBtn').addEventListener('click',goHome);
+document.getElementById('shuffleBtn').addEventListener('click',()=>{qs=shuffle(QS[lvl]).slice(0,MAX);idx=0;render();});
+</script>
+
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
